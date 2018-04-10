@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Data;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage;
-using System.IO;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using Newtonsoft.Json;
-using System.Globalization;
 
 namespace ServiceFabric.BackupRestore
 {
@@ -179,8 +180,8 @@ namespace ServiceFabric.BackupRestore
             string destFileName = $"{destinationFolder}/{FileStore.ServiceFabricBackupRestoreMetadataFileName}";
             string json = JsonConvert.SerializeObject(info);
             var blockBlobReference = _blobContainer.GetBlockBlobReference(destFileName);
-            await blockBlobReference.UploadTextAsync(json, cancellationToken);
-
+            await blockBlobReference.UploadTextAsync(json, null, null, null, null, cancellationToken);
+            
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.BackupId), info.BackupId.ToString("N"));
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.BackupOption), info.BackupOption.ToString());
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.OriginalServicePartitionId), info.OriginalServicePartitionId.ToString("N"));
@@ -217,7 +218,7 @@ namespace ServiceFabric.BackupRestore
         /// </summary>
         internal void DeleteContainer()
         {            
-            _blobContainer.DeleteIfExists();
+             _blobContainer.DeleteIfExistsAsync();
         }
 
         /// <summary>
@@ -299,7 +300,7 @@ namespace ServiceFabric.BackupRestore
             {
                 CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_blobStorageConnectionString);
                 _blobClient = storageAccount.CreateCloudBlobClient();
-                _blobClient.DefaultRequestOptions.RetryPolicy = new Microsoft.WindowsAzure.Storage.RetryPolicies.ExponentialRetry(TimeSpan.FromSeconds(1), 10);
+                _blobClient.DefaultRequestOptions.RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(1), 10);
                 _blobClient.DefaultRequestOptions.AbsorbConditionalErrorsOnRetry = true;
             }
 
@@ -336,7 +337,8 @@ namespace ServiceFabric.BackupRestore
                             string fileName = Path.GetFileName(file.Name);
                             Debug.Assert(fileName != null, nameof(fileName) + " != null");
 
-                            await file.DownloadToFileAsync(Path.Combine(destinationDirectory, fileName), FileMode.Create, cancellationToken);
+                            await file.DownloadToFileAsync(Path.Combine(destinationDirectory, fileName), FileMode.Create, null, null, null, cancellationToken);
+
                             break;
                     }
                 }
@@ -368,7 +370,7 @@ namespace ServiceFabric.BackupRestore
                 if (sourceFileName == null) continue;
                 string destFileName = $"{destinationFolder}/{Path.GetFileName(sourceFileName)}";
                 var blockBlobReference = _blobContainer.GetBlockBlobReference(destFileName);
-                await blockBlobReference.UploadFromFileAsync(sourceFileName, cancellationToken);
+                await blockBlobReference.UploadFromFileAsync(sourceFileName, (AccessCondition) null, (BlobRequestOptions) null, (OperationContext) null, cancellationToken);
             }
 
             return destinationFolder;
