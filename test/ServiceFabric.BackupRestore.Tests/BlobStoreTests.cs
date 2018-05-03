@@ -121,34 +121,16 @@ namespace ServiceFabric.BackupRestore.Tests
             Assert.AreNotEqual(Guid.Empty, result.BackupId);
 
             var container = store.BlobClient.GetContainerReference(ContainerName);
-            Assert.IsTrue(await container.ExistsAsync());
+            Assert.IsTrue(container.ExistsAsync().ConfigureAwait(false).GetAwaiter().GetResult());
 
             var rootFolder = container.GetDirectoryReference(BlobStore.RootFolder);
 
-           
-            BlobContinuationToken token = null;
-            //int blobCount = 0;
-            //do
-            //{
-            //    BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 1, token, null, null);
-              
-            //    foreach (IListBlobItem blobItem in results.Results)
-            //    {
-            //        Assert.IsInstanceOfType(blobItem, typeof(CloudPageBlob));
-                   
-            //        blobCount++;
-            //    }
-            //    Assert.AreEqual(1, blobCount);
-            //    token = results.ContinuationToken;
-            //}
-            //while (token != null);
-
-            //Assert.AreEqual(0, blobCount);
-
-            BlobResultSegment res = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 1, token, null, null);
-
-            var list = res.Results.ToList();
-
+            var list = rootFolder.ListBlobsSegmentedAsync(true, BlobListingDetails.All, 10, new BlobContinuationToken(), null, null)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult()
+                .Results
+                .ToList();
             Assert.AreEqual(2, list.Count(file => file.Uri.AbsoluteUri.EndsWith(testTxt)));
             Assert.AreEqual(1, list.Count(file => file.Uri.AbsoluteUri.EndsWith($"{subFolderName}/{testTxt}")));
             Assert.AreEqual(1, list.Count(file => file.Uri.AbsoluteUri.EndsWith(FileStore.ServiceFabricBackupRestoreMetadataFileName)));            

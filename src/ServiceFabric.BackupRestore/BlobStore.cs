@@ -181,7 +181,7 @@ namespace ServiceFabric.BackupRestore
             string json = JsonConvert.SerializeObject(info);
             var blockBlobReference = _blobContainer.GetBlockBlobReference(destFileName);
             await blockBlobReference.UploadTextAsync(json, null, null, null, null, cancellationToken);
-            
+
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.BackupId), info.BackupId.ToString("N"));
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.BackupOption), info.BackupOption.ToString());
             blockBlobReference.Metadata.Add(nameof(BackupMetadata.OriginalServicePartitionId), info.OriginalServicePartitionId.ToString("N"));
@@ -218,7 +218,7 @@ namespace ServiceFabric.BackupRestore
         /// </summary>
         internal void DeleteContainer()
         {            
-             _blobContainer.DeleteIfExistsAsync();
+            _blobContainer.DeleteIfExistsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -338,7 +338,6 @@ namespace ServiceFabric.BackupRestore
                             Debug.Assert(fileName != null, nameof(fileName) + " != null");
 
                             await file.DownloadToFileAsync(Path.Combine(destinationDirectory, fileName), FileMode.Create, null, null, null, cancellationToken);
-
                             break;
                     }
                 }
@@ -370,7 +369,7 @@ namespace ServiceFabric.BackupRestore
                 if (sourceFileName == null) continue;
                 string destFileName = $"{destinationFolder}/{Path.GetFileName(sourceFileName)}";
                 var blockBlobReference = _blobContainer.GetBlockBlobReference(destFileName);
-                await blockBlobReference.UploadFromFileAsync(sourceFileName, (AccessCondition) null, (BlobRequestOptions) null, (OperationContext) null, cancellationToken);
+                await blockBlobReference.UploadFromFileAsync(sourceFileName, null, null, null, cancellationToken);
             }
 
             return destinationFolder;
