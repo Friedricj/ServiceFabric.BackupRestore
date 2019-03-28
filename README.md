@@ -1,8 +1,15 @@
+# Important note
+This repository ServiceFabric.BackupRestore is obsolete since the introduction of
+[Periodic backup and restore in Azure Service Fabric](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-backuprestoreservice-quickstart-azurecluster#prerequisites)
+
 # ServiceFabric.BackupRestore
 ServiceFabric.BackupRestore simplifies creating and restoring backups for Reliable Stateful Service replicas. Store your backups safely outside of the cluster by using / implementing ICentralBackupStore.
 Just implement an interface!
 
 ## Change log
+
+
+
 - 3.1.3
 	- Upgraded nuget packages (SF 3.0.480) 
 
